@@ -7,8 +7,8 @@ export const languages=[
  {id:'hi',name:'हिन्दी',locale:'hi-IN'}, {id:'ru',name:'Русский',locale:'ru-RU'}
 ];
 export const languageName=id=>languages.find(l=>l.id===id)?.name||'English';
-export const defaultPreferences={native:'zh',spoken:'en',display:'original',ui:'en',textSize:18,captionSpacing:30};
-export function loadPreferences(){try{const p=JSON.parse(localStorage.getItem('lecture-preferences'));return {...defaultPreferences,...Object.fromEntries(Object.entries(p||{}).filter(([k,v])=>['native','spoken'].includes(k)?languages.some(l=>l.id===v):k==='display'?['original','native','bilingual'].includes(v):k==='ui'?['en','zh'].includes(v):k==='textSize'?[14,16,18,20,22].includes(v):k==='captionSpacing'?Number.isFinite(v)&&v>=0&&v<=100:false))};}catch{return defaultPreferences;}}
+export const defaultPreferences={native:'zh',spoken:'en',display:'original',ui:'en',textSize:18,captionSpacing:30,transcription:'openai'};
+export function loadPreferences(){try{const p=JSON.parse(localStorage.getItem('lecture-preferences'));return {...defaultPreferences,...Object.fromEntries(Object.entries(p||{}).filter(([k,v])=>['native','spoken'].includes(k)?languages.some(l=>l.id===v):k==='display'?['original','native','bilingual'].includes(v):k==='ui'?['en','zh'].includes(v):k==='textSize'?[14,16,18,20,22].includes(v):k==='transcription'?['openai','browser'].includes(v):k==='captionSpacing'?Number.isFinite(v)&&v>=0&&v<=100:false))};}catch{return defaultPreferences;}}
 export const chineseCaptions=[
  '欢迎回来。今天我们将探讨机器学习模型如何从数据中学习。',
  '我们的目标不只是记住训练样本，而是能够泛化到从未见过的新数据。',

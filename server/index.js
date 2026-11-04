@@ -1,4 +1,5 @@
 import express from 'express';
+import {attachTranscription} from './transcription.js';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {buildTutorRequest} from './tutor-prompt.js';
@@ -13,7 +14,7 @@ app.use((req,res,next)=>{
  next();
 });
 app.use(express.json({limit:'2mb'}));
-app.get('/api/status',(_req,res)=>res.json({configured:Boolean(process.env.OPENAI_API_KEY),model:process.env.OPENAI_MODEL||'gpt-4.1-mini'}));
+app.get('/api/status',(_req,res)=>res.json({configured:Boolean(process.env.OPENAI_API_KEY),model:process.env.OPENAI_MODEL||'gpt-4.1-mini',transcriptionConfigured:Boolean(process.env.OPENAI_TRANSCRIPTION_API_KEY||process.env.OPENAI_API_KEY),transcriptionModel:process.env.OPENAI_TRANSCRIPTION_MODEL||'gpt-live-transcribe'}));
 let active=0;
 app.post('/api/explain',async(req,res)=>{
  let data;try{data=validateRequest(req.body);}catch(e){return res.status(400).json({error:e.message});}
@@ -48,4 +49,6 @@ if(process.argv.includes('--production')){
  const dist=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../dist');app.use(express.static(dist));app.get('/',(_req,res)=>res.sendFile(path.join(dist,'index.html')));
 }
 app.use((err,req,res,next)=>res.status(err.status||500).json({error:err.type==='entity.too.large'?'Request is too large.':'Invalid request.'}));
-app.listen(port,'127.0.0.1',()=>console.log(`Lecture API ready at http://127.0.0.1:${port}`));
+const server=app.listen(port,'127.0.0.1',()=>console.log(`Lecture API ready at http://127.0.0.1:${port}`));
+
+attachTranscription(server);

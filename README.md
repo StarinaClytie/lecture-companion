@@ -7,7 +7,7 @@ This is the first MVP. It runs on your computer, opens in your browser, and uses
 ## Main features
 
 - **Record a lecture:** microphone input meter, pause/resume, end-session controls, and an optional audio download.
-- **Follow live captions:** browser speech recognition with a choice of lecture language.
+- **Follow live captions:** OpenAI live transcription by default, with browser speech recognition available as a selectable fallback.
 - **Ask about the whole lecture:** with nothing selected, type a question such as “What do M and N represent?” The AI receives all finalized captions from the current session, including earlier definitions.
 - **Explain selected passages:** click multiple captions, Shift-click a range, or highlight an unfamiliar term. Add an optional question or request a brief explanation directly.
 - **Continue the conversation:** ask follow-up questions while captions continue.
@@ -22,11 +22,11 @@ The tutor is prompted to answer directly, normally in no more than three short s
 ## Requirements
 
 - **Node.js 22.9 or later**, including npm. Install it from [nodejs.org](https://nodejs.org/).
-- A browser with microphone access. Live speech recognition depends on the browser and its speech service; it is not available in every browser. If captions are unavailable, audio recording can still work.
-- An internet connection for browser speech services and live AI features.
-- Your own OpenAI API key and available API credits for live explanations, custom questions, and AI translations. A key is **not** included.
+- A browser with microphone access, AudioWorklet/Web Audio, and WebSocket support for OpenAI transcription. The optional browser-recognition fallback additionally depends on its own speech service and is not available in every browser. If captions fail, the recording can still be downloaded.
+- An internet connection for OpenAI transcription, browser speech services, and live AI features.
+- Your own OpenAI API key and available API credits for OpenAI transcription, live explanations, custom questions, and AI translations. A key is **not** included. Browser recognition remains available without a transcription key where supported.
 
-Basic local development works on macOS, Windows, and Linux. The desktop-app creator currently supports **macOS only**. GitHub CI has passed dependency installation, all 22 tests, and production builds on Windows, macOS, and Linux. macOS desktop-app creation also passed. These checks do not verify microphone hardware or browser speech services; classroom recording still needs a real-device test.
+Basic local development works on macOS, Windows, and Linux. The desktop-app creator currently supports **macOS only**. GitHub CI has passed dependency installation, the test suite, and production builds on Windows, macOS, and Linux. macOS desktop-app creation also passed. These checks do not verify microphone hardware or browser speech services; classroom recording still needs a real-device test.
 
 ## Install and run locally
 
@@ -78,15 +78,16 @@ The sample is demonstration text, not audio playback. Free-form questions, exact
    ```dotenv
    OPENAI_API_KEY=your_api_key_here
    OPENAI_MODEL=gpt-4.1-mini
+   OPENAI_TRANSCRIPTION_MODEL=gpt-live-transcribe
    ```
 
 4. Restart the local services, then open the page again. Settings should show that AI is connected.
 
-The model is configurable through `OPENAI_MODEL`; it must be a model your account can access that supports the text Responses API. The default is `gpt-4.1-mini`.
+The answer model is configured through `OPENAI_MODEL` (default `gpt-4.1-mini`). The independent speech model is configured through `OPENAI_TRANSCRIPTION_MODEL` (default `gpt-live-transcribe`). Both require account access to their respective APIs. `OPENAI_TRANSCRIPTION_API_KEY` is optional: leave it blank to reuse `OPENAI_API_KEY`, or supply a separate key for transcription.
 
 **Never commit or share `.env`.** It is ignored by Git. The key is read only by the local backend, not included in the frontend build or desktop icon. Only the empty `.env.example` belongs in the repository.
 
-Speech recognition currently uses the **browser's speech service**, not OpenAI transcription. The API key enables AI explanations and caption translation; it does not change the speech-recognition engine.
+**OpenAI live transcription is now the default.** In Settings → Speech to text, choose OpenAI or Browser recognition. The selection is locked while recording or paused; end the session before changing engines. The OpenAI option streams microphone audio through the local backend to OpenAI; it incurs transcription usage charges in addition to any text-answer/translation charges. A network/API error is shown explicitly and does not silently switch providers. The original audio recording remains downloadable. Browser recognition is a manually selected fallback and depends on browser/service availability.
 
 Enabling translated captions can make many API requests during a lecture. Whole-lecture questions send the current transcript again, so longer lectures use more input tokens. Start with **Original** display if you want to limit translation requests.
 
@@ -131,21 +132,21 @@ The `.app` file and `desktop:mac` command are macOS-specific; Windows does not r
 
 ## AI providers and speech recognition are separate choices
 
-**Version 0.1.0 currently integrates only OpenAI for text answers/translation and the browser for live transcription.** Changing `OPENAI_MODEL` or pasting a Claude/DeepSeek key does not switch API providers. Claude and DeepSeek adapters, a provider picker, and hosted speech transcription have not been implemented.
+**The current version integrates OpenAI for text answers/translation and live speech transcription, plus an optional browser-recognition fallback.** Changing `OPENAI_MODEL` or pasting a Claude/DeepSeek key does not switch API providers. Claude and DeepSeek adapters have not been implemented.
 
 A provider API key identifies an account and its permissions. It is not a promise that every model accepts audio or that one endpoint can do both jobs.
 
 | Provider | Text questions/answers | Direct speech-to-text in its documented API | Current integration in this app |
 | --- | --- | --- | --- |
-| OpenAI | Available through text models | Available through dedicated transcription workflows | Text answers/translation only; transcription still uses the browser |
+| OpenAI | Available through text models | Available through dedicated transcription workflows | Text answers/translation and OpenAI live transcription; browser fallback optional |
 | Anthropic Claude | Available | The reviewed general Claude model/API documentation specifies text/image input, not a dedicated audio-transcription workflow | Not integrated |
 | DeepSeek | Available | The reviewed model metadata lists text/image inputs, not audio input or a dedicated speech-transcription workflow | Not integrated |
 
 Provider capabilities were checked against [OpenAI transcription documentation](https://developers.openai.com/api/docs/guides/transcription), [Claude models](https://platform.claude.com/docs/en/models/overview), [Claude Messages](https://platform.claude.com/docs/en/api/messages), and [DeepSeek model metadata](https://api-docs.deepseek.com/api/list-models/) on November 4, 2026. Consumer apps' voice features should not be assumed to exist in the developer API. Capabilities can change.
 
-For OpenAI, one appropriately permitted API key can authenticate both text and transcription requests, but the models/workflows and usage charges are separate. This app does not yet make those transcription requests. With a text provider that lacks transcription, an integration would need either the browser's recognition service (no additional user-supplied transcription key) or a separate speech provider/local transcription engine. A separate hosted provider generally needs its own credentials and billing.
+For OpenAI, one appropriately permitted API key can authenticate both text and transcription requests, but the models/workflows and usage charges are separate. This app now uses the live-transcription workflow when OpenAI is selected in Settings. With a text provider that lacks transcription, an integration would need either the browser's recognition service (no additional user-supplied transcription key) or a separate speech provider/local transcription engine. A separate hosted provider generally needs its own credentials and billing.
 
-The intended next step is **independent transcription and text-provider configuration**, so a user could pair one service's transcription with another's AI answers. This is a design direction, not an available feature in this release.
+Speech-engine selection and speech-model/key configuration are independent from the text-answer model. Mixing OpenAI transcription with Claude/DeepSeek text answers remains a future integration, not an available feature.
 
 ## Everyday use
 
@@ -156,7 +157,7 @@ The intended next step is **independent transcription and text-provider configur
 5. Download text notes from the caption panel, and download audio before closing the page if you need it.
 6. Use **History** to revisit text and questions, or **Add New Session** to begin another lecture.
 
-Language choices include English, Chinese, Spanish, French, German, Japanese, Korean, Portuguese, Italian, Arabic, Hindi, and Russian. Actual speech-recognition language support depends on your browser's service.
+Language choices include English, Chinese, Spanish, French, German, Japanese, Korean, Portuguese, Italian, Arabic, Hindi, and Russian. Actual recognition language support depends on the selected transcription engine and service.
 
 ## Data storage and privacy
 
@@ -170,13 +171,15 @@ Language choices include English, Chinese, Spanish, French, German, Japanese, Ko
 
 History is specific to the **browser profile and site address**. Clearing site data, switching browsers, or using a different port does not preserve the same history. There is no cloud sync or automatic cross-device backup. Download important notes.
 
-This app does not upload the recorded audio file. Your browser's speech-recognition service may process microphone audio remotely. AI questions send their relevant text context to OpenAI: selected passages and preceding captions for focused questions, or the current session's full transcript for whole-lecture questions. Translated display sends finalized captions for translation. Requests use `store: false`; this does not replace the provider's own data-handling policies.
+With OpenAI selected, the app streams microphone audio through the local backend to OpenAI for transcription; it does not automatically upload the finished recording file. With Browser recognition selected, the browser's speech service may process microphone audio remotely. Neither engine causes audio to be stored in local History. Audio transmission stops when paused or ended; the connection briefly waits for final text before closing. AI questions send their relevant text context to OpenAI: selected passages and preceding captions for focused questions, or the current session's full transcript for whole-lecture questions. Translated display sends finalized captions for translation. Text-answer/translation requests use `store: false`; this does not replace the provider's own data-handling policies for text or streamed audio.
 
 Each question uses a transcript snapshot taken when you send it. New captions are included in the next question, and previous sessions are not automatically included. This is request context, not permanent model memory.
 
 ## Limits of this MVP
 
-- Browser speech recognition is not a dedicated professional transcription service. Distant microphones, background noise, accents, and specialist terminology can affect captions.
+- OpenAI transcription is not guaranteed to match the ChatGPT app. Distant microphones, background noise, accents, and specialist terminology can still cause missed or incorrect words; test in your real classroom. Browser recognition is a less configurable fallback.
+- OpenAI uses streaming 24 kHz mono PCM, far-field noise reduction, and client-side turn boundaries. Audio is not discarded by the local speech detector. Caption timestamps are approximate turn-start times, not word-level alignment.
+- A connection is closed after 55 minutes; if prompted, retry captions to continue in the same classroom. A disconnect is not automatically replayed, so keep the audio download for words missed during outages.
 - Audio is not automatically saved. Long recordings consume browser memory.
 - Whole-lecture questions accept up to **200,000 transcript characters**. Beyond that, the app asks you to select relevant passages instead of silently dropping early captions.
 - Selected passages accept up to **24,000 characters**; individual questions and highlighted text accept up to **2,000 characters** each.
@@ -193,7 +196,7 @@ Each question uses a transcript snapshot taken when you send it. New captions ar
 | The page does not open | Keep `npm run dev` running, then visit `http://127.0.0.1:5173/`. |
 | A port is already in use | Close the other development service using port 5173 or 3001. The desktop launcher intentionally refuses a partial/conflicting startup. |
 | Microphone access is denied | Allow access in browser/site settings and operating-system privacy settings. Localhost or HTTPS is required. |
-| Audio records but captions do not appear | The browser's speech service may be unsupported or unavailable. Check the lecture language, connection, and recognition error message. |
+| Audio records but captions do not appear | For OpenAI, check the API key, credits/model access, connection and transcription error; retry captions. For Browser, check browser/service support and the lecture language. |
 | AI is not connected | Check `.env` in the project folder and restart the services. |
 | AI requests fail | Check your API credits, key, model access, and internet connection. |
 | Translations are unavailable | Keep Original display enabled while checking the API connection; source captions are preserved. |
@@ -222,15 +225,18 @@ The test suite covers recording lifecycle adapters, selection/context isolation,
 
 - **React + Vite frontend** — recording controls, caption selection, questions, language preferences, and responsive UI.
 - **MediaRecorder + Web Audio** — browser audio capture and input metering.
-- **Browser SpeechRecognition** — live transcription where supported.
+- **OpenAI Realtime WebSocket + AudioWorklet** — default live transcription, server-side keys, 24 kHz mono PCM, final-turn draining, bounded startup buffering, and ordered caption completion.
+- **Browser SpeechRecognition** — manually selected fallback where supported.
 - **Express backend** — localhost API, validation, request limits/timeouts, OpenAI Responses API calls, and server-side key handling.
 - **Browser localStorage** — session text history and preferences; no database setup required.
 - **Node/macOS utilities** — portable local desktop-app creation and background service startup.
+
+The transcription relay is in `server/transcription.js`, the client lifecycle in `src/realtime-transcription.js`, and the audio processor in `public/pcm-worklet.js`. The implementation follows the [OpenAI realtime transcription guide](https://developers.openai.com/api/docs/guides/realtime-transcription).
 
 The tutor's answer instructions are in [`server/tutor-prompt.js`](server/tutor-prompt.js). The app uses the [OpenAI text Responses API](https://developers.openai.com/api/docs/guides/text).
 
 ## Project status
 
-Version **0.1.0** is an early local MVP. An open-source license has not yet been selected; making source available does not itself grant an open-source license.
+The initial **0.1.0** release is an early local MVP; the working version adds OpenAI live transcription. An open-source license has not yet been selected; making source available does not itself grant an open-source license.
 
 The visual direction was inspired by the [Vaulta template preview](https://preview.yuanpu.cc/vaulta-website-template/); the implementation and interface were written for this project.

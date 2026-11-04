@@ -10,7 +10,7 @@ export class AudioCapture {
    const getMedia=this.platform.getUserMedia||((options)=>navigator.mediaDevices.getUserMedia(options));
    const Recorder=this.platform.MediaRecorder||globalThis.MediaRecorder;
    if(!Recorder)throw new Error('Audio recording is not supported by this browser. Try Chrome, Edge or Safari.');
-   const stream=await getMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+   const stream=await getMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
    if(generation!==this.generation){stream.getTracks().forEach(t=>t.stop());return;}
    this.stream=stream;
    const mimeType=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(type=>Recorder.isTypeSupported(type));

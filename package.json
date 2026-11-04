@@ -11,14 +11,15 @@
     "desktop:mac": "node scripts/create-desktop-app.mjs"
   },
   "dependencies": {
+    "express": "^5.0.0",
+    "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "express": "^5.0.0",
-    "lucide-react": "^0.468.0"
+    "ws": "^8.22.1"
   },
   "devDependencies": {
-    "vite": "^6.0.0",
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.0.0",
+    "vite": "^6.0.0"
   },
   "engines": {
     "node": ">=22.9.0"
