@@ -40,13 +40,13 @@ import {RealtimeTranscription} from '../src/realtime-transcription.js';
 const receive=socket=>new Promise((resolve,reject)=>{socket.once('message',data=>resolve(JSON.parse(data.toString())));socket.once('error',reject);});
 test('local websocket relay configures upstream, forwards PCM and commit, closes upstream, and keeps keys server-side',async()=>{
  const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
- let upstream,committed;const commitReceived=new Promise(resolve=>{committed=resolve;});const sent=[];const wss=attachTranscription(server,{env:{OPENAI_API_KEY:'test-only-not-real'},createUpstream:key=>{assert.equal(key,'test-only-not-real');upstream=new EventEmitter();upstream.readyState=0;upstream.bufferedAmount=0;upstream.send=text=>{const d=JSON.parse(text);sent.push(d);if(d.type==='input_audio_buffer.commit')committed();if(d.type==='session.update')queueMicrotask(()=>upstream.emit('message',Buffer.from(JSON.stringify({type:'session.updated'}))));};upstream.close=()=>{upstream.readyState=3;};queueMicrotask(()=>{upstream.readyState=1;upstream.emit('open');});return upstream;}});
+ let upstream,committed,closedUpstream;const upstreamClosed=new Promise(resolve=>{closedUpstream=resolve;});const commitReceived=new Promise(resolve=>{committed=resolve;});const sent=[];const wss=attachTranscription(server,{env:{OPENAI_API_KEY:'test-only-not-real'},createUpstream:key=>{assert.equal(key,'test-only-not-real');upstream=new EventEmitter();upstream.readyState=0;upstream.bufferedAmount=0;upstream.send=text=>{const d=JSON.parse(text);sent.push(d);if(d.type==='input_audio_buffer.commit')committed();if(d.type==='session.update')queueMicrotask(()=>upstream.emit('message',Buffer.from(JSON.stringify({type:'session.updated'}))));};upstream.close=()=>{upstream.readyState=3;closedUpstream();};queueMicrotask(()=>{upstream.readyState=1;upstream.emit('open');});return upstream;}});
  const client=new WebSocket(`ws://127.0.0.1:${server.address().port}/api/transcribe?language=en`,{origin:'http://127.0.0.1:5173'});
  try{const ready=await receive(client);assert.equal(ready.type,'ready');assert.doesNotMatch(JSON.stringify(ready),/test-only/);
   client.send(Buffer.alloc(4800));client.send(JSON.stringify({type:'commit'}));await commitReceived;
   assert.equal(sent[1].type,'input_audio_buffer.append');assert.equal(sent[1].audio.length,6400);assert.equal(sent[2].type,'input_audio_buffer.commit');
   const event=receive(client);upstream.emit('message',Buffer.from(JSON.stringify({type:'conversation.item.input_audio_transcription.completed',item_id:'a',transcript:'Hello'})));assert.equal((await event).transcript,'Hello');
-  await new Promise(r=>{client.once('close',r);client.close();});assert.equal(upstream.readyState,3);
+  await new Promise(r=>{client.once('close',r);client.close();});await upstreamClosed;assert.equal(upstream.readyState,3);
  }finally{client.terminate();wss.close();await new Promise(r=>server.close(r));}
 });
 test('untrusted websocket origins cannot open a provider connection',async()=>{
