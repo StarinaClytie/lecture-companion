@@ -26,7 +26,7 @@ The tutor is prompted to answer directly, normally in no more than three short s
 - An internet connection for browser speech services and live AI features.
 - Your own OpenAI API key and available API credits for live explanations, custom questions, and AI translations. A key is **not** included.
 
-Basic local development works on macOS, Windows, and Linux. The desktop-app creator currently supports **macOS only**. Automated checks and clean-folder installation have been run on macOS; Windows/Linux and microphone hardware behavior have not been independently verified in this release.
+Basic local development works on macOS, Windows, and Linux. The desktop-app creator currently supports **macOS only**. GitHub CI has passed dependency installation, all 22 tests, and production builds on Windows, macOS, and Linux. macOS desktop-app creation also passed. These checks do not verify microphone hardware or browser speech services; classroom recording still needs a real-device test.
 
 ## Install and run locally
 
