@@ -6,7 +6,11 @@ permissions:
   contents: read
 jobs:
   test-and-build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,3 +20,6 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Create macOS desktop app
+        if: runner.os == 'macOS'
+        run: npm run desktop:mac -- "$RUNNER_TEMP/Lecture Companion.app"

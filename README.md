@@ -116,6 +116,37 @@ npm run desktop:mac -- "/path/to/Lecture Companion.app"
 
 Windows/Linux users should use `npm run dev`; desktop shortcuts for those systems are not included yet.
 
+## Windows and Linux setup
+
+The browser-based app is not tied to macOS. On Windows, install Node.js, open **PowerShell** in the downloaded project folder, and run:
+
+```powershell
+npm ci
+npm run dev
+```
+
+Then open **http://127.0.0.1:5173/** in your browser. The same commands work in a Linux terminal. The API-key file-copy command above uses Node rather than a Unix-only shell command, so it works in PowerShell too.
+
+The `.app` file and `desktop:mac` command are macOS-specific; Windows does not run them. A Windows installer/desktop launcher is not included. Automated CI checks install, test, and build on Windows, macOS, and Linux; those checks do not verify microphone permissions, browser speech services, or audio quality on each platform. Actual Windows classroom recording still needs a hardware/browser test. Edge documents its Web Speech API support and policies [here](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies/speechrecognitionenabled); school-managed devices may disable the service.
+
+## AI providers and speech recognition are separate choices
+
+**Version 0.1.0 currently integrates only OpenAI for text answers/translation and the browser for live transcription.** Changing `OPENAI_MODEL` or pasting a Claude/DeepSeek key does not switch API providers. Claude and DeepSeek adapters, a provider picker, and hosted speech transcription have not been implemented.
+
+A provider API key identifies an account and its permissions. It is not a promise that every model accepts audio or that one endpoint can do both jobs.
+
+| Provider | Text questions/answers | Direct speech-to-text in its documented API | Current integration in this app |
+| --- | --- | --- | --- |
+| OpenAI | Available through text models | Available through dedicated transcription workflows | Text answers/translation only; transcription still uses the browser |
+| Anthropic Claude | Available | The reviewed general Claude model/API documentation specifies text/image input, not a dedicated audio-transcription workflow | Not integrated |
+| DeepSeek | Available | The reviewed model metadata lists text/image inputs, not audio input or a dedicated speech-transcription workflow | Not integrated |
+
+Provider capabilities were checked against [OpenAI transcription documentation](https://developers.openai.com/api/docs/guides/transcription), [Claude models](https://platform.claude.com/docs/en/models/overview), [Claude Messages](https://platform.claude.com/docs/en/api/messages), and [DeepSeek model metadata](https://api-docs.deepseek.com/api/list-models/) on November 4, 2026. Consumer apps' voice features should not be assumed to exist in the developer API. Capabilities can change.
+
+For OpenAI, one appropriately permitted API key can authenticate both text and transcription requests, but the models/workflows and usage charges are separate. This app does not yet make those transcription requests. With a text provider that lacks transcription, an integration would need either the browser's recognition service (no additional user-supplied transcription key) or a separate speech provider/local transcription engine. A separate hosted provider generally needs its own credentials and billing.
+
+The intended next step is **independent transcription and text-provider configuration**, so a user could pair one service's transcription with another's AI answers. This is a design direction, not an available feature in this release.
+
 ## Everyday use
 
 1. Set **Native language**, **Lecture language**, and **Display language**.
