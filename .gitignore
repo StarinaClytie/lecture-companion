@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+artifacts/
+*.app/
+*.webm
+*.m4a
+*.mp3
+*.wav
+*.mp4
+# Local design drafts and development-session notes.
+docs/superpowers/
+docs/distribution-notes.md
+design-qa.md
