@@ -91,3 +91,16 @@ test('missing transcription key produces an actionable message without opening u
  const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));let calls=0;const wss=attachTranscription(server,{env:{},createUpstream:()=>{calls++;throw Error('must not connect')}});const client=new WebSocket(`ws://127.0.0.1:${server.address().port}/api/transcribe?language=en`);
  try{const event=await receive(client);assert.equal(event.type,'error');assert.match(event.message,/not configured/);assert.equal(calls,0);}finally{client.terminate();wss.close();await new Promise(r=>server.close(r));}
 });
+test('health checks distinguish a stalled audio pipeline from audio sent without recognized words',()=>{
+ const reports=[];const client=new RealtimeTranscription({onDiagnostics:value=>reports.push(value)});client.ready=true;client.lastAudioAt=Date.now()-6000;client.total=25;client.report();assert.equal(reports.at(-1).warning,'stalled');
+ client.lastAudioAt=Date.now();client.report();assert.equal(reports.at(-1).warning,'no_text');
+ client.lastTextAt=Date.now();client.captionCount=1;client.report();assert.equal(reports.at(-1).warning,'');assert.equal(reports.at(-1).audioSeconds,25);
+ client.draining=true;client.lastAudioAt=Date.now()-6000;client.report();assert.equal(reports.at(-1).warning,'');client.dispose();
+});
+test('disposal while audio context resume is pending cannot install a watchdog afterwards',async()=>{
+ let resume,socket;class Socket{constructor(){socket=this;this.readyState=1;}close(){this.readyState=3;}}
+ class Context{constructor(){this.audioWorklet={addModule:()=>Promise.resolve()};}createMediaStreamSource(){return {connect(){},disconnect(){}};}resume(){return new Promise(r=>{resume=r;});}close(){return Promise.resolve();}}
+ class Worklet{constructor(){this.port={postMessage(){}};}connect(){}disconnect(){}}
+ const client=new RealtimeTranscription({platform:{url:'ws://test',WebSocket:Socket,AudioContext:Context,AudioWorkletNode:Worklet}});const starting=client.start({},'en');await Promise.resolve();client.dispose();resume();await starting;
+ try{assert.equal(client.watchdog,undefined);assert.equal(client.closed,true);}finally{clearInterval(client.watchdog);}
+});

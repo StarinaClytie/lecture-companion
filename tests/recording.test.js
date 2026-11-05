@@ -29,3 +29,13 @@ test('a permission request resolved after disposal releases its stream without s
 test('separate recordings produce separate complete audio files',async()=>{
  const p=platform();const audio=new AudioCapture({getUserMedia:async()=>p.stream,MediaRecorder:Recorder});await audio.start();const first=await audio.finish();await audio.start();const second=await audio.finish();assert.notEqual(first,second);assert.equal(await second.text(),'recorded audio');
 });
+test('lecture capture preserves distant speech, supports an explicit microphone, and reports actual device settings',async()=>{
+ const p=platform();p.stream.getAudioTracks=()=>[{...p.track,label:'Built-in microphone',getSettings:()=>({echoCancellation:false,noiseSuppression:false})}];let constraints,actual;
+ const audio=new AudioCapture({getUserMedia:async value=>{constraints=value;return p.stream;},MediaRecorder:Recorder,onDevice:value=>{actual=value}});
+ await audio.start({profile:'lecture',deviceId:'chosen-mic'});
+ assert.equal(constraints.audio.echoCancellation,false);assert.equal(constraints.audio.noiseSuppression,false);assert.equal(constraints.audio.autoGainControl,false);
+ assert.deepEqual(constraints.audio.deviceId,{exact:'chosen-mic'});assert.equal(actual.label,'Built-in microphone');await audio.finish();
+});
+test('close microphone profile explicitly opts into communication processing',async()=>{
+ const p=platform();let constraints;const audio=new AudioCapture({getUserMedia:async value=>{constraints=value;return p.stream;},MediaRecorder:Recorder});await audio.start({profile:'close'});assert.equal(constraints.audio.echoCancellation,true);assert.equal(constraints.audio.noiseSuppression,true);await audio.finish();
+});

@@ -159,6 +159,18 @@ Speech-engine selection and speech-model/key configuration are independent from 
 
 Language choices include English, Chinese, Spanish, French, German, Japanese, Korean, Portuguese, Italian, Arabic, Hindi, and Russian. Actual recognition language support depends on the selected transcription engine and service.
 
+## Classroom audio checks
+
+For a distant lecturer, Settings defaults to **Lecture / distant speaker · Original sound**. This requests browser echo cancellation, noise suppression, and automatic gain control to be disabled. These communication-oriented filters can alter the signal before the transcription model receives it; operating-system voice isolation may still apply. A **Close microphone** mode remains available when that processing is desired.
+
+Select the intended **Microphone**, especially if a headset is connected. If the browser has not yet exposed device names, use the explicit microphone-access button in Settings; its temporary permission stream is stopped immediately after listing devices. Choosing a disconnected device produces an error rather than silently switching inputs.
+
+While recording, expand **Recording check** to inspect the selected device, sent audio duration, provider-acknowledged turns, and received caption count. Connected means the provider session opened; it does not prove that useful speech is reaching the model. A watchdog distinguishes stalled audio processing from audio flowing without recent recognized text. These counters contain no audio or transcript content and are not saved in History.
+
+OpenAI transcription and the downloadable recording share the selected stream. Browser-recognition fallback chooses its own input; the microphone selector controls recording but cannot force that browser service to use the same device.
+
+If the meter moves but captions are missing, download a short real recording and listen to whether the lecturer is intelligible. Compare the actual recording before assuming a provider or model change will fix it. Synthetic speech tests establish connectivity and sequencing, not real-classroom accuracy.
+
 ## Data storage and privacy
 
 | Data | Where it lives |

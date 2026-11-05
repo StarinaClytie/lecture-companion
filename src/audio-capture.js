@@ -1,7 +1,7 @@
 /** Owns one microphone stream and one complete recording across pauses. */
 export class AudioCapture {
  constructor(platform={}) {this.platform=platform;this.state='idle';this.generation=0;this.chunks=[];}
- async start() {
+ async start({profile='lecture',deviceId=''}={}) {
   if(this.state==='paused') {this.stream.getTracks().forEach(t=>{t.enabled=true;});this.recorder.resume();this.state='recording';return;}
   if(this.state!=='idle')return;
   const generation=++this.generation;
@@ -10,9 +10,10 @@ export class AudioCapture {
    const getMedia=this.platform.getUserMedia||((options)=>navigator.mediaDevices.getUserMedia(options));
    const Recorder=this.platform.MediaRecorder||globalThis.MediaRecorder;
    if(!Recorder)throw new Error('Audio recording is not supported by this browser. Try Chrome, Edge or Safari.');
-   const stream=await getMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+   const processing=profile==='close';
+   const stream=await getMedia({audio:{echoCancellation:processing,noiseSuppression:processing,autoGainControl:processing,...(deviceId?{deviceId:{exact:deviceId}}:{})},video:false});
    if(generation!==this.generation){stream.getTracks().forEach(t=>t.stop());return;}
-   this.stream=stream;
+   this.stream=stream;const track=stream.getAudioTracks?.()[0];this.platform.onDevice?.({label:track?.label||'Microphone',settings:track?.getSettings?.()||{}});
    const mimeType=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(type=>Recorder.isTypeSupported(type));
    this.recorder=new Recorder(stream,mimeType?{mimeType}:undefined);this.chunks=[];
    this.recorder.ondataavailable=event=>{if(event.data?.size)this.chunks.push(event.data);};
