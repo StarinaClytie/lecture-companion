@@ -161,7 +161,7 @@ Language choices include English, Chinese, Spanish, French, German, Japanese, Ko
 
 ## Classroom audio checks
 
-For a distant lecturer, Settings defaults to **Lecture / distant speaker · Original sound**. This requests browser echo cancellation, noise suppression, and automatic gain control to be disabled. These communication-oriented filters can alter the signal before the transcription model receives it; operating-system voice isolation may still apply. A **Close microphone** mode remains available when that processing is desired.
+For a distant lecturer, Settings defaults to **Lecture / distant speaker · Original sound**. This requests browser echo cancellation, noise suppression, and automatic gain control to be disabled. These communication-oriented filters can alter the signal before the transcription model receives it; operating-system voice isolation may still apply. A **Close microphone** mode remains available when that processing is desired. Provider-side noise reduction is disabled: a real classroom recording returned empty turns with far-field filtering but recognizable speech without it.
 
 Select the intended **Microphone**, especially if a headset is connected. If the browser has not yet exposed device names, use the explicit microphone-access button in Settings; its temporary permission stream is stopped immediately after listing devices. Choosing a disconnected device produces an error rather than silently switching inputs.
 
@@ -190,7 +190,7 @@ Each question uses a transcript snapshot taken when you send it. New captions ar
 ## Limits of this MVP
 
 - OpenAI transcription is not guaranteed to match the ChatGPT app. Distant microphones, background noise, accents, and specialist terminology can still cause missed or incorrect words; test in your real classroom. Browser recognition is a less configurable fallback.
-- OpenAI uses streaming 24 kHz mono PCM, far-field noise reduction, and client-side turn boundaries. Audio is not discarded by the local speech detector. Caption timestamps are approximate turn-start times, not word-level alignment.
+- OpenAI uses streaming 24 kHz mono PCM, no provider-side noise reduction, and client-side turn boundaries. Audio is not discarded by the local speech detector. Caption timestamps are approximate turn-start times, not word-level alignment.
 - A connection is closed after 55 minutes; if prompted, retry captions to continue in the same classroom. A disconnect is not automatically replayed, so keep the audio download for words missed during outages.
 - Audio is not automatically saved. Long recordings consume browser memory.
 - Whole-lecture questions accept up to **200,000 transcript characters**. Beyond that, the app asks you to select relevant passages instead of silently dropping early captions.

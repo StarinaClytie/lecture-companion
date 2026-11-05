@@ -2,7 +2,7 @@ import {WebSocket,WebSocketServer} from 'ws';
 import {languages} from '../src/languages.js';
 export function transcriptionConfig(language,env=process.env){
  if(!languages.some(l=>l.id===language))throw new Error('Unsupported lecture language.');
- return {type:'session.update',session:{type:'transcription',audio:{input:{format:{type:'audio/pcm',rate:24000},noise_reduction:{type:'far_field'},transcription:{model:env.OPENAI_TRANSCRIPTION_MODEL||'gpt-live-transcribe',languages:[language],delay:'medium'},turn_detection:null}}}};
+ return {type:'session.update',session:{type:'transcription',audio:{input:{format:{type:'audio/pcm',rate:24000},noise_reduction:null,transcription:{model:env.OPENAI_TRANSCRIPTION_MODEL||'gpt-live-transcribe',languages:[language],delay:'medium'},turn_detection:null}}}};
 }
 export function relayEvent(event){
  if(event.type==='error'||event.type==='conversation.item.input_audio_transcription.failed')return {type:'error',message:'OpenAI transcription failed. Check model access, credits and connection. Recording is still available.'};

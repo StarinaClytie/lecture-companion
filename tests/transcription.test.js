@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {TranscriptionEvents,pcm16} from '../src/realtime-transcription.js';
 import {transcriptionConfig,relayEvent} from '../server/transcription.js';
-test('transcription has its own model and language config, uses far-field input, no spoken AI output',()=>{
+test('transcription has its own model and language config, preserves original classroom audio, no spoken AI output',()=>{
  const session=transcriptionConfig('en',{}).session;
  assert.equal(session.type,'transcription');assert.equal(session.audio.input.transcription.model,'gpt-live-transcribe');
  assert.deepEqual(session.audio.input.transcription.languages,['en']);assert.equal(session.audio.input.turn_detection,null);
- assert.equal(session.audio.input.noise_reduction.type,'far_field');
+ assert.equal(session.audio.input.noise_reduction,null);
  assert.throws(()=>transcriptionConfig('invalid',{}));
 });
 test('completed turns arriving out of order appear once in committed order, including empty turns',()=>{
